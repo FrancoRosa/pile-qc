@@ -49,9 +49,9 @@ def rows_to_json(rows):
             x_design = float(value[6])
             y_design = float(value[5])
             z_design = 0 if "N/A" == value[7] else float(value[7])
-            x_field = float(value[22])
-            y_field = float(value[23])
-            z_field = 0 if "N/A" == value[7] else float(value[24])
+            x_field = float(value[23])
+            y_field = float(value[22])
+            z_field = 0 if "N/A" == value[24] else float(value[24])
 
             latlng_design = proj_to_wgs84.transform(x_design, y_design)
             latlng_field = proj_to_wgs84.transform(x_field, y_field)
@@ -77,7 +77,7 @@ def rows_to_json(rows):
 print('... reading file')
 r = xlsx_to_rows(DIR+FILE)
 print('... creating projections')
-create_projs()
+create_projs(2275)
 print('... reading columns')
 data = rows_to_json(r)
 print('... processing')
@@ -99,9 +99,9 @@ def get_columns(samples):
     return eastern_coords
 
 
-def get_distance(group):
-    x = (group[0]['x_field'] - group[1]['x_field'])
-    y = (group[0]['y_field'] - group[1]['y_field'])
+def get_distance(group, key='_field'):
+    x = (group[0]['x' + key] - group[1]['x' + key])
+    y = (group[0]['y' + key] - group[1]['y' + key])
     return (x**2 + y**2)**(1/2)
 
 
@@ -112,7 +112,7 @@ def group_angle_error(group):
     h2 = group[2]['z_field'] - group[1]['z_field']
     ang1 = degrees(atan2(h1, d1))
     ang2 = degrees(atan2(h2, d2))
-    return 180-ang1-ang2
+    return round(abs(ang1+ang2), 3)
 
 
 def group_x_error(group):
@@ -120,13 +120,19 @@ def group_x_error(group):
     p2 = asarray((group[1]['x_field'], group[1]['y_field']))
     p3 = asarray((group[2]['x_field'], group[2]['y_field']))
     d = norm(cross(p2-p1, p1-p3))/norm(p2-p1)
-    return d
+    return round(d, 3)
 
 
 def group_y_error(group):
     d1 = get_distance(group[0:2])
     d2 = get_distance(group[1:3])
-    return [d1, d2]
+    return [round(d1, 3), round(d2, 3)]
+
+
+def group_y_diff(group):
+    d1 = get_distance(group[0:2], '_design')
+    d2 = get_distance(group[1:3], '_design')
+    return [round(d1, 3), round(d2, 3)]
 
 
 def give_order(samples, eastern_coords):
@@ -141,17 +147,23 @@ def give_order(samples, eastern_coords):
                 eastern_coords.index(row['x_design']),
                 rows_y.index(row['y_design'])
             ]
-            # print(row['order'], row['x_design'], row['y_design'])
+        # print(row['order'], row['x_design'], row['y_design'])
         # make sets of 3 and for the middle element add the group error
+        rows = sorted(rows, key=lambda x: x['order'])
+
         for i in range(len(rows)):
             if i+3 > len(rows):
                 break
             angle_error = group_angle_error(rows[i:i+3])
             x_error = group_x_error(rows[i:i+3])
             y_error = group_y_error(rows[i:i+3])
+            y_diff = group_y_diff(rows[i:i+3])
             rows[i+1]['angle_g_error'] = angle_error
             rows[i+1]['x_g_error'] = x_error
-            rows[i+1]['y_g_error'] = y_error
+            rows[i+1]['y_g_error'] = [
+                round(abs(y_diff[0] - y_error[0])),
+                round(abs(y_diff[1] - y_error[1]))
+            ]
 
         ordered_samples += rows
     return(ordered_samples)
@@ -160,15 +172,11 @@ def give_order(samples, eastern_coords):
 columns = get_columns(samples)
 new_samples = give_order(samples, columns)
 
-print('... sample order and angle error')
-for s in new_samples[:10]:
-    if 'angle_g_error' in s:
-        print(s['order'], ':', s['angle_g_error'])
-    else:
-        print(s['order'])
 
 print('... print results to file')
-f = open("result.json", "w")
+DIR_OUT = '/home/fx/Upwork/pile-qc/src/'
+FILE_OUT = 'result.json'
+f = open(DIR_OUT+FILE_OUT, "w")
 f.write(dumps(new_samples))
 f.close()
 
