@@ -17,8 +17,19 @@ code {
   position: absolute;
   right: 0;
   top: 10vh;
-  background: white;
+  background: rgba(173, 216, 230, 0.5);
   padding: 1em;
+  border-radius: 1em 0 0 1em;
+}
+
+.upload {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 20vh;
+  background: rgba(173, 216, 230, 0.5);
+  padding: 1em;
+  border-radius: 0 1em 1em 0;
 }
 
 .hidden {

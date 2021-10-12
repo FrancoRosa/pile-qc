@@ -3,6 +3,7 @@ import { NavigationControl, StaticMap } from "react-map-gl";
 import { ColumnLayer, ScatterplotLayer } from "@deck.gl/layers";
 import points from "./result.json";
 import { useState } from "react";
+import FileInput from "./FileInput";
 
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia20xMTVmcmFuY28iLCJhIjoiY2t0eXQ3cHBhMGI3aTMxcG14dnN0OHJveSJ9.LWxkBiVPF9UfGWMI4sWakQ";
@@ -71,6 +72,7 @@ const get_color = (point) => {
 
 const App = () => {
   const [showInfo, setShowInfo] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [relatedPoints, setRelatedPoints] = useState([]);
 
   const handlePileClick = (d) => {
@@ -88,8 +90,15 @@ const App = () => {
   };
 
   const handleCloseButton = () => {
-    setRelatedPoints([]);
-    setShowInfo(false);
+    document.querySelector(".details").classList.add("animate__fadeOutRight");
+    setTimeout(() => {
+      setShowInfo(false);
+      setRelatedPoints([]);
+    }, 1000);
+  };
+
+  const handleCloseUpload = () => {
+    setShowUpload(false);
   };
 
   return (
@@ -152,7 +161,7 @@ const App = () => {
         )}
       </DeckGL>
       {showInfo && (
-        <div className="details">
+        <div className="details card animate__animated animate__fadeInRight">
           <h1>Target pile:</h1>
           <p>Pile id: {relatedPoints[1].pile_id}</p>
           <p>N design: {relatedPoints[1].y_design}</p>
@@ -182,6 +191,20 @@ const App = () => {
           <button className="button" onClick={handleCloseButton}>
             Close
           </button>
+        </div>
+      )}
+      {showUpload && (
+        <div className="upload animate__animated animate__fadeInLeft">
+          <h1>Upload file</h1>
+          <FileInput />
+          <button className="button" onClick={handleCloseUpload}>
+            Close
+          </button>
+        </div>
+      )}
+      {!showUpload && (
+        <div className="upload animate__animated animate__fadeInLeft">
+          <button onClick={() => setShowUpload(true)}>Upload</button>
         </div>
       )}
     </>
