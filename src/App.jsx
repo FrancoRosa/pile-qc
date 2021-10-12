@@ -1,7 +1,6 @@
 import { DeckGL } from "@deck.gl/react";
-import { MapView } from "@deck.gl/core";
 import { NavigationControl, StaticMap } from "react-map-gl";
-import { ColumnLayer } from "@deck.gl/layers";
+import { ColumnLayer, ScatterplotLayer } from "@deck.gl/layers";
 import points from "./result.json";
 import { useState } from "react";
 
@@ -72,11 +71,25 @@ const get_color = (point) => {
 
 const App = () => {
   const [showInfo, setShowInfo] = useState(false);
-  const [realtedPoints, setRelatedPoints] = useState([]);
+  const [relatedPoints, setRelatedPoints] = useState([]);
+
   const handlePileClick = (d) => {
-    const pile_id = d.object.pile_id;
-    console.log(pile_id);
-    setShowInfo(!showInfo);
+    const { order } = d.object;
+
+    const upperEdge = points.filter(
+      (p) => p.order[0] === order[0] && p.order[1] === order[1] - 1
+    )[0];
+    const lowerEdge = points.filter(
+      (p) => p.order[0] === order[0] && p.order[1] === order[1] + 1
+    )[0];
+
+    setRelatedPoints([upperEdge, d.object, lowerEdge]);
+    setShowInfo(true);
+  };
+
+  const handleCloseButton = () => {
+    setRelatedPoints([]);
+    setShowInfo(false);
   };
 
   return (
@@ -87,11 +100,10 @@ const App = () => {
         getTooltip={({ object }) =>
           object &&
           `Order: [${object.order}]
-        Code: ${object.pile_id}\n\
-        angle: ${object.angle_g_error}\n\
-        Xdiff: ${object.x_g_error}\n\
-        Ydiff: ${object.y_g_error}\n\
-        `
+          Code: ${object.pile_id}\n\
+          angle: ${object.angle_g_error}\n\
+          Xdiff: ${object.x_g_error}\n\
+          Ydiff: ${object.y_g_error}`
         }
       >
         <StaticMap mapboxApiAccessToken={MAPBOX_ACCESS_TOKEN}>
@@ -127,22 +139,51 @@ const App = () => {
           <ScatterplotLayer
             lineWidthMaxPixels={3}
             lineWidthMinPixels={2}
-            getRadius={(d) => (d.selected ? (d.placed ? 0.3 : 1) : 0.01)}
+            getRadius={3}
             data={relatedPoints}
-            getPosition={(d) => [d.lng, d.lat]}
-            getColor={(d) => colors[d.color]}
-            getFillColor={(d) => colorsFill[d.color]}
-            getLineColor={(d) => colors[d.color]}
+            getPosition={(d) => [d.lng_design, d.lat_design]}
+            getColor={[10, 10, 10, 30]}
+            getFillColor={[10, 10, 10, 30]}
+            getLineColor={[10, 10, 10, 30]}
             filled={true}
             stroked={true}
             opacity={0.8}
           />
         )}
       </DeckGL>
-      <div className={`details ${showInfo && "hidden"}`}>
-        <h1>TITLE</h1>
-        <p>CONTAINER</p>
-      </div>
+      {showInfo && (
+        <div className="details">
+          <h1>Target pile:</h1>
+          <p>Pile id: {relatedPoints[1].pile_id}</p>
+          <p>N design: {relatedPoints[1].y_design}</p>
+          <p>E design: {relatedPoints[1].x_design}</p>
+          <p>Lat design: {relatedPoints[1].lat_design}</p>
+          <p>Lng design: {relatedPoints[1].lng_design}</p>
+          <hr />
+          <p
+            className={relatedPoints[1].angle_g_error < 0.69 ? "green" : "red"}
+          >
+            Angle error: {relatedPoints[1].angle_g_error}
+          </p>
+          <p className={relatedPoints[1].x_g_error < 0.25 ? "green" : "red"}>
+            Easting error: {relatedPoints[1].x_g_error}
+          </p>
+          <p
+            className={
+              relatedPoints[1].y_g_error[0] < 0.25 ||
+              relatedPoints[1].y_g_error[1] < 0.25
+                ? "green"
+                : "red"
+            }
+          >
+            Northing error: {relatedPoints[1].y_g_error[0]},{" "}
+            {relatedPoints[1].y_g_error[0]}
+          </p>
+          <button className="button" onClick={handleCloseButton}>
+            Close
+          </button>
+        </div>
+      )}
     </>
   );
 };

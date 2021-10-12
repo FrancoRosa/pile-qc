@@ -161,8 +161,8 @@ def give_order(samples, eastern_coords):
             rows[i+1]['angle_g_error'] = angle_error
             rows[i+1]['x_g_error'] = x_error
             rows[i+1]['y_g_error'] = [
-                round(abs(y_diff[0] - y_error[0])),
-                round(abs(y_diff[1] - y_error[1]))
+                round(abs(y_diff[0] - y_error[0]), 3),
+                round(abs(y_diff[1] - y_error[1]), 3)
             ]
 
         ordered_samples += rows
