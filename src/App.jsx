@@ -1,10 +1,15 @@
 import { DeckGL } from "@deck.gl/react";
 import { NavigationControl, StaticMap } from "react-map-gl";
 import { ColumnLayer, ScatterplotLayer } from "@deck.gl/layers";
-// import points from "./result.json";
 import { useState } from "react";
 import FileInput from "./FileInput";
 import { useStoreState } from "easy-peasy";
+import mapboxgl from "mapbox-gl";
+
+// eslint-disable-next-line import/no-webpack-loader-syntax
+mapboxgl.workerClass =
+  // eslint-disable-next-line import/no-webpack-loader-syntax
+  require("worker-loader!mapbox-gl/dist/mapbox-gl-csp-worker").default;
 
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia20xMTVmcmFuY28iLCJhIjoiY2t0eXQ3cHBhMGI3aTMxcG14dnN0OHJveSJ9.LWxkBiVPF9UfGWMI4sWakQ";
