@@ -1,10 +1,16 @@
+import { useStoreActions, useStoreState } from "easy-peasy";
 import { useEffect, useState } from "react";
 import { uploadFile } from "./api";
 
 const FileInput = () => {
   const [path, setPath] = useState("");
   const [name, setName] = useState("Nothing selected yet");
-  const [fileStatus, setFileStatus] = useState({});
+  const [fileStatus, setFileStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const setPoints = useStoreActions((actions) => actions.setPoints);
+  const points = useStoreState((state) => state.points);
+  const setFile = useStoreActions((actions) => actions.setFile);
 
   useEffect(() => {
     const handleFiles = (e) => {
@@ -19,11 +25,20 @@ const FileInput = () => {
   }, []);
 
   const handleFiles = (file) => {
+    setFileStatus(null);
+    setLoading(true);
     uploadFile(file)
       .then((res) => {
-        setFileStatus(res);
+        setFileStatus(res.message);
+        setPoints(res.points);
+        setLoading(false);
+        setFile(name);
       })
-      .catch(() => setFileStatus({ message: false }));
+      .catch(() => {
+        setFileStatus(false);
+        setPoints([]);
+        setLoading(false);
+      });
   };
 
   return (
@@ -48,21 +63,23 @@ const FileInput = () => {
         )}
       </div>
       <div className="column">
-        {fileStatus.message ? (
+        {loading && (
+          <p className="animate__animated animate__zoomIn animate__infinite">
+            ... Processing{" "}
+          </p>
+        )}
+        {fileStatus ? (
           <div className="is-flex is-align-content-center is-flex-direction-column">
-            <p
-              className={
-                fileStatus.message ? "has-text-success" : "has-text-fail"
-              }
-            >
-              {fileStatus.message ? "Success" : "Fail"}
+            <p className={fileStatus ? "has-text-success" : "has-text-fail"}>
+              {fileStatus ? "Success" : "Fail"}
             </p>
-            <p>Piles found: {fileStatus.points.length}</p>
+            <p>Piles found: {points.length}</p>
           </div>
         ) : (
           ""
         )}
       </div>
+      <br />
     </div>
   );
 };

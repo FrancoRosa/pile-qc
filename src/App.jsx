@@ -1,21 +1,13 @@
 import { DeckGL } from "@deck.gl/react";
 import { NavigationControl, StaticMap } from "react-map-gl";
 import { ColumnLayer, ScatterplotLayer } from "@deck.gl/layers";
-import points from "./result.json";
+// import points from "./result.json";
 import { useState } from "react";
 import FileInput from "./FileInput";
+import { useStoreState } from "easy-peasy";
 
 const MAPBOX_ACCESS_TOKEN =
   "pk.eyJ1Ijoia20xMTVmcmFuY28iLCJhIjoiY2t0eXQ3cHBhMGI3aTMxcG14dnN0OHJveSJ9.LWxkBiVPF9UfGWMI4sWakQ";
-
-const INITIAL_VIEW_STATE = {
-  longitude: points[3].lng_field,
-  latitude: points[3].lat_field,
-  zoom: 21,
-  maxZoom: 25,
-  pitch: 60,
-  bearing: 0,
-};
 
 const colors = {
   black: [0, 0, 0],
@@ -74,6 +66,18 @@ const App = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [relatedPoints, setRelatedPoints] = useState([]);
+
+  const points = useStoreState((state) => state.points);
+  const file = useStoreState((state) => state.file);
+
+  const INITIAL_VIEW_STATE = {
+    longitude: points.length > 3 ? points[3].lng_field : -93,
+    latitude: points.length > 3 ? points[3].lat_field : 40,
+    zoom: 21,
+    maxZoom: 25,
+    pitch: 60,
+    bearing: 0,
+  };
 
   const handlePileClick = (d) => {
     const { order } = d.object;
@@ -197,6 +201,9 @@ const App = () => {
         <div className="upload animate__animated animate__fadeInLeft">
           <h1>Upload file</h1>
           <FileInput />
+          <hr />
+          {file && <p>Current file: {file}</p>}
+          <hr />
           <button className="button" onClick={handleCloseUpload}>
             Close
           </button>

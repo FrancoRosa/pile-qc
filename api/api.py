@@ -46,9 +46,11 @@ def process_file():
         file.save(filedir)
         message = True
         points = format_file(filedir)
+
     response = make_response(jsonify({
         "message": message, "points": points
     }), 200)
+
     response.headers["Content-Type"] = "application/json"
     processing_file = False
     return response
