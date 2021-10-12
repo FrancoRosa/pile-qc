@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const host = "localhost:10000";
+// const host = "localhost:10000";
+const host = "http://161.35.178.247:10000";
 
 export const uploadFile = async (file, epsg) => {
   console.log("... uploading file");
