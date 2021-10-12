@@ -1,7 +1,7 @@
 import { DeckGL } from "@deck.gl/react";
 import { NavigationControl, StaticMap } from "react-map-gl";
 import { ColumnLayer, ScatterplotLayer } from "@deck.gl/layers";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import FileInput from "./FileInput";
 import { useStoreState } from "easy-peasy";
 import mapboxgl from "mapbox-gl";
@@ -70,7 +70,11 @@ const get_color = (point) => {
 const App = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [found, setFound] = useState([]);
+  const [targetPile, setTargetPile] = useState({});
   const [relatedPoints, setRelatedPoints] = useState([]);
+  const searchInput = useRef(null);
 
   const points = useStoreState((state) => state.points);
   const file = useStoreState((state) => state.file);
@@ -83,6 +87,7 @@ const App = () => {
     pitch: 60,
     bearing: 0,
   };
+  const [view, setView] = useState(INITIAL_VIEW_STATE);
 
   const handlePileClick = (d) => {
     const { order } = d.object;
@@ -110,10 +115,43 @@ const App = () => {
     setShowUpload(false);
   };
 
+  const handleCloseSearch = () => {
+    setShowSearch(false);
+  };
+
+  const handleShowSearch = () => {
+    setShowSearch(true);
+    setShowUpload(false);
+  };
+
+  const handleShowUpload = () => {
+    setShowUpload(true);
+    setShowSearch(false);
+  };
+
+  const handleSearch = () => {
+    const query = searchInput.current.value.toLowerCase();
+    console.log(query);
+    const result = points.filter((point) =>
+      point.pile_id.toLowerCase().includes(query)
+    );
+    result.splice(10);
+    setFound(result);
+  };
+
+  const handlePileSearch = (f) => {
+    setView({
+      ...view,
+      latitude: f.lat_design,
+      longitude: f.lng_design,
+    });
+    setTargetPile(f);
+  };
+
   return (
     <>
       <DeckGL
-        initialViewState={INITIAL_VIEW_STATE}
+        initialViewState={view}
         controller={true}
         getTooltip={({ object }) =>
           object &&
@@ -168,6 +206,21 @@ const App = () => {
             opacity={0.8}
           />
         )}
+        {showSearch && (
+          <ScatterplotLayer
+            lineWidthMaxPixels={3}
+            lineWidthMinPixels={2}
+            getRadius={3}
+            data={[targetPile]}
+            getPosition={(d) => [d.lng_design, d.lat_design]}
+            getColor={[100, 10, 10, 30]}
+            getFillColor={[100, 10, 10, 30]}
+            getLineColor={[100, 10, 10, 30]}
+            filled={true}
+            stroked={true}
+            opacity={0.5}
+          />
+        )}
       </DeckGL>
       {showInfo && (
         <div className="details card animate__animated animate__fadeInRight">
@@ -216,7 +269,30 @@ const App = () => {
       )}
       {!showUpload && (
         <div className="upload animate__animated animate__fadeInLeft">
-          <button onClick={() => setShowUpload(true)}>Upload</button>
+          <button onClick={handleShowUpload}>Upload</button>
+        </div>
+      )}
+      {showSearch && (
+        <div className="search animate__animated animate__fadeInLeft">
+          <h1>Search pile</h1>
+          <input type="text" ref={searchInput} />
+          <button onClick={handleSearch}>Search</button>
+          <hr />
+          {found.map((f) => (
+            <p className="pile-list" onClick={() => handlePileSearch(f)}>
+              {f.pile_id}
+            </p>
+          ))}
+          <hr />
+
+          <button className="button" onClick={handleCloseSearch}>
+            Close
+          </button>
+        </div>
+      )}
+      {!showSearch && !showUpload && (
+        <div className="search animate__animated animate__fadeInLeft">
+          <button onClick={handleShowSearch}>Search</button>
         </div>
       )}
     </>
